@@ -6,15 +6,15 @@ Inspired by Anthropic's [**"How we built a C compiler using Claude as our coding
 
 The original blog post demonstrated that a team of 16 parallel Claude instances could build a 100,000-line C compiler — coordinating solely through Git with no central orchestrator. We adopted the core principles from that work:
 
-**Constitution-driven agents** — Each agent reads a shared `CLAUDE.md` that defines its role, rules, and workflow. There is no central scheduler telling agents what to do. They read the constitution, assess the current state of the repo, and decide their next action independently.
+- **Constitution-driven agents** — Each agent reads a shared `CLAUDE.md` that defines its role, rules, and workflow. There is no central scheduler telling agents what to do. They read the constitution, assess the current state of the repo, and decide their next action independently.
 
-**Git as the only coordination layer** — Agents share a bare Git repository. They push, pull, and rebase just like human developers. Conflicts are resolved through `git rebase`, not through a message broker or task queue.
+- **Git as the only coordination layer** — Agents share a bare Git repository. They push, pull, and rebase just like human developers. Conflicts are resolved through `git rebase`, not through a message broker or task queue.
 
-**File-based task locking** — Before starting work, an agent writes a lock file to `current_tasks/` and pushes it. Other agents check this directory to avoid duplicate work. This mirrors the file-based locking used in the C compiler project.
+- **File-based task locking** — Before starting work, an agent writes a lock file to `current_tasks/` and pushes it. Other agents check this directory to avoid duplicate work. This mirrors the file-based locking used in the C compiler project.
 
-**Tests gate all progress** — Agents must run `tests/run-tests.sh` before pushing. Failing tests block the push. This ensures that autonomous agents don't degrade the codebase, matching the blog's emphasis on high-quality automated tests as the primary feedback loop.
+- **Tests gate all progress** — Agents must run `tests/run-tests.sh` before pushing. Failing tests block the push. This ensures that autonomous agents don't degrade the codebase, matching the blog's emphasis on high-quality automated tests as the primary feedback loop.
 
-**Small, atomic commits** — The constitution enforces one small feature per cycle. This keeps merge conflicts manageable and makes it easy for other agents to integrate changes on the next pull.
+- **Small, atomic commits** — The constitution enforces one small feature per cycle. This keeps merge conflicts manageable and makes it easy for other agents to integrate changes on the next pull.
 
 ## Our Design
 
