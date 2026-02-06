@@ -1,0 +1,63 @@
+services:
+  agent-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - AGENT_ID=1
+      - GAME_NAME=${GAME_NAME:-tetris}
+    volumes:
+      - game-repo:/repo
+      - agent1-work:/work
+    restart: unless-stopped
+
+  agent-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - AGENT_ID=2
+      - GAME_NAME=${GAME_NAME:-tetris}
+    volumes:
+      - game-repo:/repo
+      - agent2-work:/work
+    restart: unless-stopped
+
+  agent-3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - AGENT_ID=3
+      - GAME_NAME=${GAME_NAME:-tetris}
+    volumes:
+      - game-repo:/repo
+      - agent3-work:/work
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: ../dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - GAME_NAME=${GAME_NAME:-tetris}
+    volumes:
+      - game-repo:/repo:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+volumes:
+  game-repo:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${REPO_PATH}
+  agent1-work:
+  agent2-work:
+  agent3-work:
