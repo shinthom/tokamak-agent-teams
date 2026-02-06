@@ -1,0 +1,13 @@
+{
+  "name": "tokamak-forge-dashboard",
+  "version": "1.0.0",
+  "description": "Tokamak Forge — Agent Dashboard & Web Forge",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.16.0",
+    "dockerode": "^4.0.2"
+  }
+}

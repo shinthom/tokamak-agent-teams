@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tokamak Forge</title>
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --border: #30363d;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --accent-blue: #58a6ff;
+      --accent-green: #3fb950;
+      --accent-red: #f85149;
+      --accent-yellow: #d29922;
+      --accent-purple: #bc8cff;
+      --accent-cyan: #39d2c0;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    header h1 .icon { color: var(--accent-cyan); }
+    header .game-name { color: var(--accent-blue); font-weight: 700; }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-red);
+    }
+
+    .status-dot.connected { background: var(--accent-green); }
+
+    .btn-stop {
+      background: rgba(248, 81, 73, 0.15);
+      color: var(--accent-red);
+      border: 1px solid var(--accent-red);
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: none;
+    }
+
+    .btn-stop:hover {
+      background: rgba(248, 81, 73, 0.3);
+    }
+
+    /* ===== Landing View ===== */
+    #landingView {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 52px);
+      padding: 40px 24px;
+    }
+
+    #landingView.forging {
+      justify-content: flex-start;
+      padding-top: 32px;
+    }
+
+    .forge-title {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+    }
+
+    .forge-subtitle {
+      color: var(--text-secondary);
+      font-size: 16px;
+      margin-bottom: 48px;
+    }
+
+    .forge-form {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: var(--accent-cyan);
+    }
+
+    .form-group input::placeholder {
+      color: var(--text-secondary);
+    }
+
+    .btn-forge {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .btn-forge:hover {
+      opacity: 0.9;
+    }
+
+    .btn-forge:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Step Indicator */
+    .step-indicator {
+      width: 100%;
+      max-width: 800px;
+      margin-top: 40px;
+      display: none;
+    }
+
+    .step-indicator.active { display: block; }
+
+    .steps {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 20px;
+      right: 20px;
+      height: 2px;
+      background: var(--border);
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+      width: 80px;
+    }
+
+    .step-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--bg-tertiary);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .step.active .step-circle {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      background: rgba(57, 210, 192, 0.1);
+    }
+
+    .step.done .step-circle {
+      border-color: var(--accent-green);
+      background: var(--accent-green);
+      color: var(--bg-primary);
+    }
+
+    .step-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .step.active .step-label { color: var(--accent-cyan); }
+    .step.done .step-label { color: var(--accent-green); }
+
+    .forge-log {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      max-height: 420px;
+      overflow-y: auto;
+      color: var(--text-secondary);
+      margin-top: 12px;
+    }
+
+    .forge-log::-webkit-scrollbar { width: 6px; }
+    .forge-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .forge-log .log-entry { margin-bottom: 1px; white-space: pre-wrap; word-break: break-all; }
+    .forge-log .log-step { color: var(--accent-cyan); font-weight: 600; }
+    .forge-log .log-msg { color: var(--text-secondary); }
+    .forge-log .log-detail { color: var(--accent-green); opacity: 0.85; }
+    .forge-log .log-error { color: var(--accent-red); }
+    .forge-log .log-spec { color: var(--accent-purple); opacity: 0.8; }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent-cyan);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    /* ===== Dashboard View ===== */
+    #dashboardView { display: none; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 16px;
+      padding: 16px 24px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    /* Agent Cards */
+    .agents-panel { grid-column: 1 / -1; }
+
+    .agent-cards {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .agent-card {
+      flex: 1;
+      min-width: 250px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+      border-left: 3px solid var(--text-secondary);
+    }
+
+    .agent-card.working { border-left-color: var(--accent-green); }
+    .agent-card.idle { border-left-color: var(--accent-yellow); }
+    .agent-card.conflict { border-left-color: var(--accent-red); }
+
+    .agent-card .agent-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .agent-card .agent-id {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .agent-card .agent-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+
+    .agent-status.working {
+      background: rgba(63, 185, 80, 0.15);
+      color: var(--accent-green);
+    }
+
+    .agent-status.idle {
+      background: rgba(210, 153, 34, 0.15);
+      color: var(--accent-yellow);
+    }
+
+    .agent-card .agent-task {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      min-height: 20px;
+    }
+
+    .agent-card .agent-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .agent-card .agent-stats span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stat-value { color: var(--text-primary); font-weight: 600; }
+
+    /* Progress Panel */
+    .progress-bar-container {
+      margin-bottom: 16px;
+    }
+
+    .progress-bar-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent-green);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .stat-box {
+      background: var(--bg-tertiary);
+      padding: 12px;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .stat-box .label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-box .value {
+      font-size: 24px;
+      font-weight: 700;
+      margin-top: 4px;
+      color: var(--accent-cyan);
+    }
+
+    /* Timeline */
+    .timeline {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .timeline::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .timeline::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .commit-item {
+      display: flex;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+
+    .commit-item:last-child { border-bottom: none; }
+
+    .commit-hash {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 12px;
+      color: var(--accent-blue);
+      white-space: nowrap;
+    }
+
+    .commit-author {
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      min-width: 70px;
+    }
+
+    .commit-author.agent-1 { color: var(--accent-green); }
+    .commit-author.agent-2 { color: var(--accent-purple); }
+    .commit-author.agent-3 { color: var(--accent-cyan); }
+
+    .commit-message {
+      font-size: 13px;
+      color: var(--text-secondary);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .commit-time {
+      font-size: 11px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    /* Log Panel */
+    .log-panel { grid-column: 1 / -1; }
+
+    .log-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .log-tab {
+      padding: 8px 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .log-tab:hover { color: var(--text-primary); }
+    .log-tab.active {
+      color: var(--accent-blue);
+      border-bottom-color: var(--accent-blue);
+    }
+
+    .log-output {
+      background: var(--bg-primary);
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      color: var(--text-secondary);
+    }
+
+    .log-output .log-line-info { color: var(--accent-blue); }
+    .log-output .log-line-warn { color: var(--accent-yellow); }
+    .log-output .log-line-error { color: var(--accent-red); }
+    .log-output .log-line-success { color: var(--accent-green); }
+
+    .empty-state {
+      color: var(--text-secondary);
+      text-align: center;
+      padding: 32px;
+      font-size: 13px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .pulse { animation: pulse 2s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>
+      <span class="icon">&#x2B21;</span>
+      Tokamak Forge
+      <span class="game-name" id="gameName"></span>
+    </h1>
+    <div class="header-right">
+      <button class="btn-stop" id="btnStop" onclick="stopSession()">Stop Agents</button>
+      <div class="connection-status">
+        <div class="status-dot" id="connDot"></div>
+        <span id="connLabel">Connecting...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- View 1: Landing -->
+  <div id="landingView">
+    <div class="forge-title">Tokamak Forge</div>
+    <div class="forge-subtitle">Multi-agent game builder powered by Claude</div>
+
+    <div class="forge-form" id="forgeForm">
+      <div class="form-group">
+        <label>Game Name</label>
+        <input type="text" id="inputGameName" placeholder="e.g. tetris, snake, breakout" autocomplete="off" />
+      </div>
+      <div class="form-group" id="descriptionGroup" style="display:none;">
+        <label id="descriptionLabel">Game Description</label>
+        <textarea id="inputGameDescription" rows="3" placeholder="Describe the game..." style="width:100%;padding:10px 14px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:14px;font-family:inherit;outline:none;resize:vertical;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Agent Count</label>
+        <select id="inputAgentCount">
+          <option value="1">1 Agent</option>
+          <option value="2">2 Agents</option>
+          <option value="3" selected>3 Agents</option>
+          <option value="4">4 Agents</option>
+          <option value="5">5 Agents</option>
+        </select>
+      </div>
+      <button class="btn-forge" id="btnForge" onclick="startForge()">Forge</button>
+    </div>
+
+    <div class="step-indicator" id="stepIndicator">
+      <div class="steps" id="steps">
+        <div class="step" data-step="0">
+          <div class="step-circle">1</div>
+          <div class="step-label">Prereqs</div>
+        </div>
+        <div class="step" data-step="1">
+          <div class="step-circle">2</div>
+          <div class="step-label">Repo</div>
+        </div>
+        <div class="step" data-step="2">
+          <div class="step-circle">3</div>
+          <div class="step-label">Scaffold</div>
+        </div>
+        <div class="step" data-step="3">
+          <div class="step-circle">4</div>
+          <div class="step-label">SPEC.md</div>
+        </div>
+        <div class="step" data-step="4">
+          <div class="step-circle">5</div>
+          <div class="step-label">Tests</div>
+        </div>
+        <div class="step" data-step="5">
+          <div class="step-circle">6</div>
+          <div class="step-label">Commit</div>
+        </div>
+        <div class="step" data-step="6">
+          <div class="step-circle">7</div>
+          <div class="step-label">Agents</div>
+        </div>
+      </div>
+      <div class="forge-log" id="forgeLog"></div>
+      <div id="specStreamBox" style="display:none;margin-top:12px;">
+        <div style="font-size:12px;color:var(--accent-purple);font-weight:600;margin-bottom:6px;">SPEC.md generating...</div>
+        <div id="specStreamContent" style="background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:12px;font-family:'SF Mono','Consolas',monospace;font-size:11px;line-height:1.5;max-height:300px;overflow-y:auto;color:var(--accent-purple);opacity:0.85;white-space:pre-wrap;word-break:break-word;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View 2: Dashboard -->
+  <div id="dashboardView">
+    <div class="grid">
+      <!-- Agent Status Panel -->
+      <div class="panel agents-panel">
+        <div class="panel-header">&#9679; Agents</div>
+        <div class="panel-body">
+          <div class="agent-cards" id="agentCards">
+            <div class="empty-state">Waiting for agents...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress Panel -->
+      <div class="panel">
+        <div class="panel-header">&#9632; Progress</div>
+        <div class="panel-body">
+          <div class="progress-bar-container">
+            <div class="progress-bar-label">
+              <span>Implementation</span>
+              <span id="progressPct">0%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-bar-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="label">Commits</div>
+              <div class="value" id="statCommits">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="label">Lines</div>
+              <div class="value" id="statLines">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="label">Tasks Done</div>
+              <div class="value" id="statTasks">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline Panel -->
+      <div class="panel">
+        <div class="panel-header">&#8614; Timeline</div>
+        <div class="panel-body">
+          <div class="timeline" id="timeline">
+            <div class="empty-state">No commits yet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log Panel -->
+      <div class="panel log-panel">
+        <div class="panel-header">&#9638; Live Logs</div>
+        <div class="log-tabs" id="logTabs">
+          <div class="log-tab active" data-agent="all">All</div>
+        </div>
+        <div class="log-output" id="logOutput">Waiting for log data...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const state = {
+        agents: {},
+        commits: [],
+        currentTasks: [],
+        completedTaskCount: 0,
+        totalLines: 0,
+        totalCommits: 0,
+        specModules: [],
+        logs: {}
+      };
+
+      let ws = null;
+      let activeLogTab = 'all';
+      const logBuffer = { all: [] };
+      let currentSession = null;
+
+      // --- View Management ---
+      function showLanding() {
+        document.getElementById('landingView').style.display = 'flex';
+        document.getElementById('dashboardView').style.display = 'none';
+        document.getElementById('btnStop').style.display = 'none';
+        document.getElementById('gameName').textContent = '';
+      }
+
+      function showDashboard(session) {
+        document.getElementById('landingView').style.display = 'none';
+        document.getElementById('dashboardView').style.display = 'block';
+        document.getElementById('btnStop').style.display = 'inline-block';
+        if (session) {
+          document.getElementById('gameName').textContent = session.gameName;
+          document.title = 'Tokamak Forge — ' + session.gameName;
+        }
+      }
+
+      // --- Forge ---
+      var gameValidated = false;
+
+      window.startForge = function() {
+        var gameName = document.getElementById('inputGameName').value.trim();
+        var agentCount = parseInt(document.getElementById('inputAgentCount').value, 10);
+        var gameDescription = (document.getElementById('inputGameDescription').value || '').trim();
+
+        if (!gameName) {
+          document.getElementById('inputGameName').focus();
+          return;
+        }
+
+        if (!/^[a-zA-Z0-9_-]+$/.test(gameName)) {
+          alert('Game name must be alphanumeric (hyphens and underscores allowed)');
+          return;
+        }
+
+        // If description group is visible and user didn't fill it in, require it
+        var descGroup = document.getElementById('descriptionGroup');
+        if (descGroup.style.display !== 'none' && !gameValidated && !gameDescription) {
+          document.getElementById('inputGameDescription').focus();
+          return;
+        }
+
+        // Step 1: Validate game name if not yet validated
+        if (!gameValidated) {
+          document.getElementById('btnForge').disabled = true;
+          document.getElementById('btnForge').textContent = 'Checking...';
+
+          fetch('/api/validate-game', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ gameName: gameName })
+          })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (!data.known && data.question && !gameDescription) {
+              // Show description input with the question
+              descGroup.style.display = '';
+              document.getElementById('descriptionLabel').textContent = data.question;
+              document.getElementById('inputGameDescription').focus();
+              document.getElementById('btnForge').disabled = false;
+              document.getElementById('btnForge').textContent = 'Forge';
+              return;
+            }
+            // Known game or description provided — proceed
+            gameValidated = true;
+            doForge(gameName, agentCount, gameDescription);
+          })
+          .catch(function() {
+            // Validation failed — proceed anyway
+            gameValidated = true;
+            doForge(gameName, agentCount, gameDescription);
+          });
+          return;
+        }
+
+        // Already validated — proceed
+        doForge(gameName, agentCount, gameDescription);
+      };
+
+      function doForge(gameName, agentCount, gameDescription) {
+        document.getElementById('btnForge').disabled = true;
+        document.getElementById('btnForge').textContent = 'Forging...';
+        document.getElementById('stepIndicator').classList.add('active');
+        document.getElementById('forgeForm').style.display = 'none';
+        document.querySelector('.forge-title').style.display = 'none';
+        document.querySelector('.forge-subtitle').style.display = 'none';
+        document.getElementById('landingView').classList.add('forging');
+
+        fetch('/api/forge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gameName: gameName, agentCount: agentCount, gameDescription: gameDescription })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.error) {
+            addForgeLog(data.error, 'error');
+            document.getElementById('btnForge').disabled = false;
+            document.getElementById('btnForge').textContent = 'Forge';
+          } else {
+            currentSession = data.session;
+          }
+        })
+        .catch(function(err) {
+          addForgeLog('Network error: ' + err.message, 'error');
+          document.getElementById('btnForge').disabled = false;
+          document.getElementById('btnForge').textContent = 'Forge';
+        });
+      }
+
+      window.stopSession = function() {
+        if (!confirm('Stop all agents?')) return;
+
+        fetch('/api/session/stop', { method: 'POST' })
+          .then(function(r) { return r.json(); })
+          .then(function() {
+            currentSession = null;
+            showLanding();
+            resetForgeUI();
+          })
+          .catch(function(err) {
+            alert('Error stopping session: ' + err.message);
+          });
+      };
+
+      function resetForgeUI() {
+        gameValidated = false;
+        document.getElementById('btnForge').disabled = false;
+        document.getElementById('btnForge').textContent = 'Forge';
+        document.getElementById('stepIndicator').classList.remove('active');
+        document.getElementById('forgeLog').innerHTML = '';
+        document.getElementById('specStreamBox').style.display = 'none';
+        document.getElementById('specStreamContent').textContent = '';
+        document.getElementById('forgeForm').style.display = '';
+        document.getElementById('descriptionGroup').style.display = 'none';
+        document.getElementById('inputGameDescription').value = '';
+        document.querySelector('.forge-title').style.display = '';
+        document.querySelector('.forge-subtitle').style.display = '';
+        document.getElementById('landingView').classList.remove('forging');
+        document.querySelectorAll('.step').forEach(function(s) {
+          s.classList.remove('active', 'done');
+        });
+      }
+
+      function updateStepIndicator(stepNum) {
+        document.querySelectorAll('.step').forEach(function(el) {
+          var s = parseInt(el.dataset.step, 10);
+          if (s < stepNum) {
+            el.classList.remove('active');
+            el.classList.add('done');
+          } else if (s === stepNum) {
+            el.classList.add('active');
+            el.classList.remove('done');
+          } else {
+            el.classList.remove('active', 'done');
+          }
+        });
+      }
+
+      function addForgeLog(text, type) {
+        var log = document.getElementById('forgeLog');
+        // Auto-detect detail lines (indented with spaces)
+        if (!type && text && text.match(/^\s{2,}/)) {
+          type = 'detail';
+        }
+        var cls = type === 'error' ? 'log-error'
+                : type === 'step' ? 'log-step'
+                : type === 'spec' ? 'log-spec'
+                : type === 'detail' ? 'log-detail'
+                : 'log-msg';
+        var entry = document.createElement('div');
+        entry.className = 'log-entry ' + cls;
+        entry.textContent = text;
+        log.appendChild(entry);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      // --- WebSocket Connection ---
+      function connect() {
+        var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(protocol + '//' + location.host);
+
+        ws.onopen = function() {
+          document.getElementById('connDot').classList.add('connected');
+          document.getElementById('connLabel').textContent = 'Connected';
+        };
+
+        ws.onclose = function() {
+          document.getElementById('connDot').classList.remove('connected');
+          document.getElementById('connLabel').textContent = 'Disconnected';
+          setTimeout(connect, 3000);
+        };
+
+        ws.onmessage = function(event) {
+          var msg = JSON.parse(event.data);
+          handleMessage(msg);
+        };
+      }
+
+      function handleMessage(msg) {
+        switch (msg.type) {
+          case 'init':
+            if (msg.session && msg.session.status !== 'stopped') {
+              currentSession = msg.session;
+              if (msg.session.status === 'running') {
+                showDashboard(msg.session);
+              } else {
+                // Still forging
+                document.getElementById('inputGameName').value = msg.session.gameName;
+                document.getElementById('btnForge').disabled = true;
+                document.getElementById('btnForge').textContent = 'Forging...';
+                document.getElementById('stepIndicator').classList.add('active');
+                updateStepIndicator(msg.session.forgeStep);
+              }
+              if (msg.session.gameName) {
+                document.getElementById('gameName').textContent = msg.session.gameName;
+              }
+            }
+            if (msg.state) {
+              Object.assign(state, msg.state);
+              renderAll();
+            }
+            break;
+
+          case 'forge:progress':
+            if (msg.data) {
+              if (msg.data.type === 'step') {
+                updateStepIndicator(msg.data.step);
+                addForgeLog('[' + (msg.data.step + 1) + '/7] ' + msg.data.message, 'step');
+                // Hide spec stream when moving past step 3
+                if (msg.data.step > 3) {
+                  document.getElementById('specStreamBox').style.display = 'none';
+                }
+              } else if (msg.data.type === 'log') {
+                addForgeLog(msg.data.message);
+              } else if (msg.data.type === 'spec-stream') {
+                // Show streaming SPEC content in dedicated area
+                var box = document.getElementById('specStreamBox');
+                var content = document.getElementById('specStreamContent');
+                box.style.display = '';
+                content.textContent += msg.data.chunk;
+                content.scrollTop = content.scrollHeight;
+              }
+            }
+            if (msg.session) currentSession = msg.session;
+            break;
+
+          case 'forge:complete':
+            if (msg.session) {
+              currentSession = msg.session;
+              addForgeLog('Forge complete! Agents are now running.', 'step');
+              // Mark all steps done
+              document.querySelectorAll('.step').forEach(function(s) {
+                s.classList.remove('active');
+                s.classList.add('done');
+              });
+              // Switch to dashboard after brief delay
+              setTimeout(function() {
+                showDashboard(currentSession);
+              }, 1500);
+            }
+            break;
+
+          case 'forge:error':
+            addForgeLog('Error: ' + (msg.data && msg.data.message || 'Unknown error'), 'error');
+            document.getElementById('forgeForm').style.display = '';
+            document.querySelector('.forge-title').style.display = '';
+            document.querySelector('.forge-subtitle').style.display = '';
+            document.getElementById('btnForge').disabled = false;
+            document.getElementById('btnForge').textContent = 'Retry';
+            break;
+
+          case 'session:stopped':
+            currentSession = null;
+            showLanding();
+            resetForgeUI();
+            break;
+
+          case 'state':
+            Object.assign(state, msg.data);
+            renderAll();
+            break;
+
+          case 'newCommit':
+            addLogLine('New commit: ' + msg.data.author + ' — ' + msg.data.message, 'info');
+            break;
+
+          case 'agent:log':
+            if (msg.data) {
+              var agentKey = 'agent-' + msg.data.agentId;
+              if (!logBuffer[agentKey]) logBuffer[agentKey] = [];
+              var entry = {
+                text: '[Agent ' + msg.data.agentId + '] ' + msg.data.line,
+                level: 'info',
+                time: new Date().toLocaleTimeString()
+              };
+              logBuffer[agentKey].push(entry);
+              logBuffer.all.push(entry);
+              if (logBuffer[agentKey].length > 200) logBuffer[agentKey].shift();
+              if (logBuffer.all.length > 500) logBuffer.all.shift();
+              renderLogs();
+            }
+            break;
+        }
+      }
+
+      // --- Renderers ---
+      function renderAll() {
+        renderAgents();
+        renderProgress();
+        renderTimeline();
+      }
+
+      function renderAgents() {
+        var container = document.getElementById('agentCards');
+        var agents = Object.values(state.agents);
+
+        if (agents.length === 0) {
+          container.innerHTML = '<div class="empty-state pulse">Waiting for agents...</div>';
+          return;
+        }
+
+        container.innerHTML = agents.map(function(agent) {
+          return '<div class="agent-card ' + agent.status + '">' +
+            '<div class="agent-header">' +
+              '<span class="agent-id">Agent ' + agent.id + '</span>' +
+              '<span class="agent-status ' + agent.status + '">' + agent.status + '</span>' +
+            '</div>' +
+            '<div class="agent-task">' + (agent.currentTask || 'No active task') + '</div>' +
+            '<div class="agent-stats">' +
+              '<span>Commits: <span class="stat-value">' + (agent.commitCount || 0) + '</span></span>' +
+              '<span>Tasks: <span class="stat-value">' + (agent.taskCount || 0) + '</span></span>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+
+        updateLogTabs(agents);
+      }
+
+      function renderProgress() {
+        var totalModules = state.specModules.length || 6;
+        var completed = state.completedTaskCount;
+        var pct = Math.min(100, Math.round((completed / totalModules) * 100));
+
+        document.getElementById('progressPct').textContent = pct + '%';
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('statCommits').textContent = state.totalCommits || 0;
+        document.getElementById('statLines').textContent = state.totalLines || 0;
+        document.getElementById('statTasks').textContent = state.completedTaskCount || 0;
+      }
+
+      function renderTimeline() {
+        var container = document.getElementById('timeline');
+        var commits = state.commits || [];
+
+        if (commits.length === 0) {
+          container.innerHTML = '<div class="empty-state">No commits yet</div>';
+          return;
+        }
+
+        container.innerHTML = commits.slice(0, 20).map(function(commit) {
+          var agentClass = commit.author ? commit.author.replace(/\s/g, '-') : '';
+          return '<div class="commit-item">' +
+            '<span class="commit-hash">' + (commit.hash || '').slice(0, 7) + '</span>' +
+            '<span class="commit-author ' + agentClass + '">' + (commit.author || 'unknown') + '</span>' +
+            '<span class="commit-message">' + escapeHtml(commit.message || '') + '</span>' +
+            '<span class="commit-time">' + (commit.timeAgo || '') + '</span>' +
+          '</div>';
+        }).join('');
+      }
+
+      function updateLogTabs(agents) {
+        var tabs = document.getElementById('logTabs');
+        var existing = new Set();
+        Array.from(tabs.children).forEach(function(t) { existing.add(t.dataset.agent); });
+        agents.forEach(function(agent) {
+          var key = 'agent-' + agent.id;
+          if (!existing.has(key)) {
+            var tab = document.createElement('div');
+            tab.className = 'log-tab';
+            tab.dataset.agent = key;
+            tab.textContent = 'Agent ' + agent.id;
+            tab.addEventListener('click', function() { switchLogTab(key); });
+            tabs.appendChild(tab);
+            if (!logBuffer[key]) logBuffer[key] = [];
+          }
+        });
+      }
+
+      function switchLogTab(tab) {
+        activeLogTab = tab;
+        document.querySelectorAll('.log-tab').forEach(function(t) {
+          t.classList.toggle('active', t.dataset.agent === tab);
+        });
+        renderLogs();
+      }
+
+      function addLogLine(text, level) {
+        level = level || 'info';
+        var entry = { text: text, level: level, time: new Date().toLocaleTimeString() };
+        logBuffer.all.push(entry);
+        if (logBuffer.all.length > 500) logBuffer.all.shift();
+        renderLogs();
+      }
+
+      function renderLogs() {
+        var output = document.getElementById('logOutput');
+        var lines = logBuffer[activeLogTab] || logBuffer.all;
+        if (lines.length === 0) {
+          output.textContent = 'Waiting for log data...';
+          return;
+        }
+        output.innerHTML = lines.slice(-50).map(function(l) {
+          return '<span class="log-line-' + l.level + '">[' + l.time + '] ' + escapeHtml(l.text) + '</span>';
+        }).join('\n');
+        output.scrollTop = output.scrollHeight;
+      }
+
+      function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      }
+
+      // Initialize log tab click
+      document.querySelector('.log-tab[data-agent="all"]').addEventListener('click', function() { switchLogTab('all'); });
+
+      // Check for active session on page load
+      fetch('/api/session')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.session && data.session.status !== 'stopped') {
+            currentSession = data.session;
+            if (data.session.status === 'running') {
+              showDashboard(data.session);
+            }
+          } else {
+            showLanding();
+          }
+        })
+        .catch(function() {
+          showLanding();
+        });
+
+      // Reset validation when game name changes
+      document.getElementById('inputGameName').addEventListener('input', function() {
+        gameValidated = false;
+        document.getElementById('descriptionGroup').style.display = 'none';
+        document.getElementById('inputGameDescription').value = '';
+      });
+
+      // Enter key to submit
+      document.getElementById('inputGameName').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') window.startForge();
+      });
+
+      // Start WebSocket
+      connect();
+    })();
+  </script>
+</body>
+</html>
